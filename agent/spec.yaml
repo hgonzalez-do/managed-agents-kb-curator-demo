@@ -1,0 +1,90 @@
+# DigitalOcean Managed Agents — session spec for the docs & knowledge-base curator.
+#
+# ${VARS} are substituted by scripts/04-start-agent.sh from .env / .state.env.
+#
+# Schema note: this follows the structure described in the Managed Agents Design
+# Partner Guide (agent, model, github, secrets, env, policy, triggers). Field names
+# may differ slightly in your preview build; the intent of each block is documented
+# so it is easy to map.
+
+name: ${AGENT_NAME}
+description: Weekly curator that turns doctl release notes into support docs and re-indexes the knowledge base.
+
+# Which coding agent runs inside the sandbox: codex | opencode | claude-code | custom
+agent: claude-code
+
+# The "brain". Uses a DigitalOcean-hosted model through Serverless Inference so the
+# whole demo stays on DO. To bring your own key instead, set provider: anthropic and
+# put ANTHROPIC_API_KEY in secrets.
+model:
+  provider: digitalocean
+  name: ${AGENT_MODEL}
+  base_url: https://inference.do-ai.run
+  api_key_secret: MODEL_ACCESS_KEY
+
+# The task. The prompt file is uploaded alongside the spec by 04-start-agent.sh.
+prompt_file: curator.md
+
+# GitHub access via the platform's OAuth connection; the agent never sees a PAT.
+github:
+  auth: oauth
+  repositories:
+    - ${GITHUB_OWNER}/${APP_REPO}
+  git_identity:
+    name: doctl docs curator (Managed Agent)
+    email: docs-curator@users.noreply.github.com
+
+# Credentials. Routed through DigitalOcean Secrets Manager: encrypted at rest,
+# write-only, never returned in session metadata or logs. NEVER put these in env.
+secrets:
+  MODEL_ACCESS_KEY: ${MODEL_ACCESS_KEY}
+  DIGITALOCEAN_ACCESS_TOKEN: ${DO_API_TOKEN}
+  SPACES_ACCESS_KEY: ${SPACES_ACCESS_KEY}
+  SPACES_SECRET_KEY: ${SPACES_SECRET_KEY}
+
+# Non-sensitive configuration. Debug-readable inside the sandbox, so no credentials here.
+env:
+  SOURCE_REPO: digitalocean/doctl
+  GITHUB_OWNER: ${GITHUB_OWNER}
+  APP_REPO: ${APP_REPO}
+  KB_UUID: ${KB_UUID}
+  KB_DATA_SOURCE_UUID: ${KB_DATA_SOURCE_UUID}
+  SPACES_BUCKET: ${SPACES_BUCKET}
+  SPACES_REGION: ${SPACES_REGION}
+  SPACES_PREFIX: ${SPACES_PREFIX}
+
+# Policy engine: what the agent may do on its own, what needs sign-off, what is blocked.
+# This session runs unattended on a cron, so everything it needs is allowed outright
+# and the blast radius is limited by scope (one repo, one bucket prefix, one KB).
+policy:
+  allow:
+    - files:read
+    - files:write
+    - "bash: git *"
+    - "bash: python3 *"
+    - "bash: pip *"
+    - "bash: aws s3 *"
+    - "bash: curl https://api.github.com/*"
+    - "bash: curl https://api.digitalocean.com/*"
+    - "bash: curl https://kbaas.do-ai.run/*"
+    - "bash: ./scripts/*"
+  require_approval:
+    - "bash: git push --force*"          # never expected; forces a human if it happens
+  deny:
+    - "bash: rm -rf /*"
+    - "bash: curl * | sh"
+    - "network: *"                        # everything not explicitly allowed above
+
+# Automation: weekly cron plus an on-demand webhook (handy for the live demo and for
+# wiring a GitHub "release published" webhook later).
+triggers:
+  cron:
+    schedule: "${AGENT_CRON}"
+    timezone: UTC
+  webhook:
+    enabled: true
+
+session:
+  timeout_minutes: 30
+  pause_when_idle: true       # pay nothing between runs; state and history are kept
+  checkpoint_on_start: true   # roll back or fork if a run goes sideways

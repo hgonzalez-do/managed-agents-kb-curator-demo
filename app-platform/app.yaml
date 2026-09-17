@@ -1,0 +1,43 @@
+# App Platform spec for the doctl Support Bot.
+# ${VARS} are substituted by scripts/03-deploy-app.sh from .env / .state.env.
+name: ${APP_NAME}
+region: ${APP_REGION}
+services:
+  - name: web
+    github:
+      repo: ${GITHUB_OWNER}/${APP_REPO}
+      branch: main
+      deploy_on_push: true
+    # For a public repo without the GitHub app installed, replace `github:` with:
+    # git:
+    #   repo_clone_url: https://github.com/${GITHUB_OWNER}/${APP_REPO}.git
+    #   branch: main
+    environment_slug: node-js
+    run_command: node server.js
+    http_port: 8080
+    instance_count: 1
+    instance_size_slug: apps-s-1vcpu-0.5gb
+    health_check:
+      http_path: /api/health
+    envs:
+      - key: DO_API_TOKEN            # GenAI-read scoped token for KB retrieval
+        scope: RUN_TIME
+        type: SECRET
+        value: ${DO_API_TOKEN_READ}
+      - key: MODEL_ACCESS_KEY        # Serverless Inference key
+        scope: RUN_TIME
+        type: SECRET
+        value: ${MODEL_ACCESS_KEY}
+      - key: KB_UUID
+        scope: RUN_TIME
+        value: ${KB_UUID}
+      - key: INFERENCE_MODEL
+        scope: RUN_TIME
+        value: ${INFERENCE_MODEL}
+ingress:
+  rules:
+    - component:
+        name: web
+      match:
+        path:
+          prefix: /

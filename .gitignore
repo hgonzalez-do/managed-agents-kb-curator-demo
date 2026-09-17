@@ -1,0 +1,4 @@
+.env
+.state.env
+.rendered/
+.DS_Store
