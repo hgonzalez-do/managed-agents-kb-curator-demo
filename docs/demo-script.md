@@ -20,9 +20,10 @@ knowledge base. Name the products: Managed Agents, Serverless Inference, Knowled
 App Platform, Spaces.
 
 **3. Trigger the agent (30 s).** Instead of waiting for Monday's cron, run
-`scripts/06-run-curator-now.sh`. It starts a fresh session from the same spec the trigger
-uses and attaches. Paste the one-line prompt it prints. (Or, if you created the webhook
-trigger, publish a release on a fork of doctl and let GitHub fire it.)
+`scripts/06-run-curator-now.sh`. It creates a fresh session from the same spec the trigger
+uses, sends the one-line prompt, and attaches. Run it with `--dry-run` first if you want to
+show the resolved manifest with secrets redacted. (Or, if you created the webhook trigger,
+publish a release on a fork of doctl and let GitHub fire it.)
 
 **4. Watch it work (3 min).** Narrate as the terminal streams:
 - It pulls the repo and runs `releases.py fetch`: one new release found.

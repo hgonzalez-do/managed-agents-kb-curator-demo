@@ -21,6 +21,13 @@ banner "Serverless Inference"
 curl -sS -o /dev/null -w "  GET /v1/models -> HTTP %{http_code}\n" \
   -H "Authorization: Bearer $MODEL_ACCESS_KEY" https://inference.do-ai.run/v1/models
 
+banner "Managed Agents"
+if doctl agent sizes >/dev/null 2>&1; then
+  echo "  ok   doctl agent commands available and feature enabled ($(doctl version | head -1))"
+else
+  echo "  WARN: 'doctl agent' unavailable. Install the doctl beta build (set DOCTL_BETA_DIR in .env) and have Managed Agents enabled on your team."
+fi
+
 banner "GitHub"
 gh auth status 2>&1 | sed 's/^/  /' | head -3
 

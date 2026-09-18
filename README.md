@@ -47,7 +47,7 @@ Generated IDs are saved to `.state.env` so later scripts pick them up.
 | 3 | `scripts/03-deploy-app.sh` | App Platform app from `app-platform/app.yaml` |
 | 4 | `scripts/04-create-trigger.sh` | validates the policy, creates the weekly cron trigger (and optional GitHub webhook trigger) from `agent/spec.yaml` |
 | 5 | `scripts/05-demo-rewind.sh [N]` | stages a live demo by removing the newest N releases from docs + KB |
-| 6 | `scripts/06-run-curator-now.sh` | starts an attached session from the same spec so you can watch a run |
+| 6 | `scripts/06-run-curator-now.sh` | runs the curator now from the same spec: attached (default), `--headless`, or `--dry-run` to print the resolved manifest |
 | 7 | `scripts/07-cleanup.sh` | deletes everything above |
 
 One-time, before step 4:
@@ -115,6 +115,9 @@ All in `.env.example`. The ones people usually change:
   `POST /v2/agents/sessions/policy/validate` (step 4 does this for you).
 - The runbook is attached as a **skill**, so the trigger prompt is one sentence and the same
   spec works for cron, webhook and attached sessions.
+- `doctl agent start <spec> --prompt "..."` sends the prompt as soon as the session is ready;
+  add `--on-hitl approve` for a headless run, or `--dry-run` to print the resolved manifest
+  with secrets redacted. `doctl agent prompt <session> "..."` sends a follow-up.
 - Credentials go in `spec.secrets`, never `spec.env`. `spec.env` values are debug-readable
   in the sandbox.
 - First prompt latency is roughly 10 to 13 seconds today (sandbox creation is about 1.5 s;

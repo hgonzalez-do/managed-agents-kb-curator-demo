@@ -4,22 +4,20 @@
 load_env
 
 echo "This will delete:"
-echo "  Managed Agent triggers: ${AGENT_NAME}-weekly, ${AGENT_NAME}-on-release (if present)"
-echo "  Managed Agent sessions: any named ${AGENT_NAME}*"
-echo "  App Platform app:       ${APP_ID:-<none>}"
-echo "  Knowledge base:         ${KB_UUID:-<none>}"
-echo "  Spaces bucket:          s3://${SPACES_BUCKET:-<none>} (all objects)"
+echo "  Managed Agent triggers/sessions named ${AGENT_NAME}*"
+echo "  App Platform app:  ${APP_ID:-<none>}"
+echo "  Knowledge base:    ${KB_UUID:-<none>}"
+echo "  Spaces bucket:     s3://${SPACES_BUCKET:-<none>} (all objects)"
 read -r -p "Type 'delete' to continue: " ans
 [ "$ans" = "delete" ] || { echo "Aborted."; exit 0; }
 
-if command -v doctl >/dev/null && doctl agent --help >/dev/null 2>&1; then
-  banner "Triggers and sessions"
-  for id in $(doctl agent triggers list -o json 2>/dev/null | jq -r --arg n "$AGENT_NAME" '.[]? | select(.name | startswith($n)) | .id'); do
-    doctl agent triggers delete "$id" --force && echo "  trigger $id deleted"
-  done
-  for s in $(doctl agent list -o json 2>/dev/null | jq -r --arg n "$AGENT_NAME" '.[]? | select(.name | startswith($n)) | .name'); do
-    doctl agent remove "$s" && echo "  session $s removed"
-  done
+if doctl agent --help >/dev/null 2>&1; then
+  banner "Triggers"
+  doctl agent triggers list --format TriggerID,Name --no-header | awk -v n="$AGENT_NAME" 'index($2,n)==1 {print $1}' \
+    | while read -r id; do doctl agent triggers delete "$id" --force && echo "  trigger $id deleted"; done
+  banner "Sessions"
+  doctl agent list --format SessionID,Name --no-header | awk -v n="$AGENT_NAME" 'index($2,n)==1 {print $1}' \
+    | while read -r id; do doctl agent remove "$id" && echo "  session $id removed"; done
 fi
 if [ -n "${APP_ID:-}" ]; then banner "App"; doctl apps delete "$APP_ID" --force && echo "  deleted"; fi
 if [ -n "${KB_UUID:-}" ]; then banner "Knowledge base"; doctl gradient knowledge-base delete "$KB_UUID" --force && echo "  deleted"; fi

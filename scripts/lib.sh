@@ -91,6 +91,7 @@ tpl, runbook, out = sys.argv[1:4]
 spec = os.path.expandvars(open(tpl).read())
 skill = textwrap.indent(open(runbook).read().rstrip("\n"), "      ")
 open(out, "w").write(spec.replace("__CURATOR_RUNBOOK__", skill))
+os.chmod(out, 0o600)
 PY
   echo "$out"
 }
