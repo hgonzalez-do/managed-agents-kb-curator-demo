@@ -58,9 +58,19 @@ do_api() {  # do_api METHOD PATH [JSON_BODY]
 }
 
 # start_kb_index KB_UUID DATA_SOURCE_UUID — start an indexing job; prints the job UUID.
-# (Creating a KB does not index it; an explicit job is required.)
+# Creating a KB does not index it; an explicit job is required. A brand-new KB also needs a
+# few minutes for its backing database to provision (the API answers "failed to get db creds"
+# until then), so this retries for up to ~10 minutes.
 start_kb_index() {
-  do_api POST /gen-ai/indexing_jobs "{\"knowledge_base_uuid\":\"$1\",\"data_source_uuids\":[\"$2\"]}" | jq -r '.job.uuid // empty'
+  local body="{\"knowledge_base_uuid\":\"$1\",\"data_source_uuids\":[\"$2\"]}" resp job
+  for attempt in $(seq 1 20); do
+    resp="$(do_api POST /gen-ai/indexing_jobs "$body")"
+    job="$(printf '%s' "$resp" | jq -r '.job.uuid // empty')"
+    if [ -n "$job" ]; then echo "$job"; return 0; fi
+    echo "  attempt $attempt: $(printf '%s' "$resp" | jq -r '.message // .' 2>/dev/null | head -c 120) (retrying in 30s)" >&2
+    sleep 30
+  done
+  return 1
 }
 
 # wait_for_kb_index JOB_UUID [TIMEOUT_SECONDS] — poll an indexing job until it finishes.
