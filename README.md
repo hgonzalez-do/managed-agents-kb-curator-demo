@@ -1,6 +1,6 @@
 # Docs & Knowledge-Base Curator — a DigitalOcean Managed Agents demo
 
-A weekly **Managed Agent** (Claude Code, in a DO sandbox) reads new
+A weekly **Managed Agent** (OpenCode harness in a DO sandbox, DO-hosted model) reads new
 [doctl releases](https://github.com/digitalocean/doctl/releases), writes support docs into a
 GitHub repo, regenerates a machine-readable release index, syncs the docs to **Spaces**,
 and re-indexes a **Gradient Knowledge Base**. A support chatbot on **App Platform** answers
@@ -109,7 +109,7 @@ All in `.env.example`. The ones people usually change:
 | `SPACES_REGION` / `SPACES_BUCKET` | `nyc3` / (unique name) | KB data source |
 | `KB_REGION` | `tor1` | Knowledge base region |
 | `INFERENCE_MODEL` | `llama-4-maverick` | Chatbot model (any DO-hosted catalog model ID) |
-| `AGENT_MODEL` | `deepseek-v4-pro` | DO-hosted model the coding agent uses |
+| `AGENT_MODEL` | `deepseek-v4-pro` | DO-hosted model the OpenCode harness uses |
 | `AGENT_SIZE` | `mars-2vcpu-4gb` | Sandbox size |
 | `AGENT_CRON` / `AGENT_TIMEZONE` | `0 9 * * 1` / `UTC` | Curator schedule |
 | `OUTPUT_MODE` / `OUTPUT_EMAIL` | `email` | Where each run's report is delivered |
@@ -123,10 +123,10 @@ All in `.env.example`. The ones people usually change:
   secrets, size/timeouts, skills, permissions, budget). The rendered file can be imported in
   the console as an Agent, saved with `doctl agent config create --spec`, or passed directly to
   `doctl agent start` / `doctl agent triggers create`.
-- The spec uses the platform's `HARNESS_INFERENCE_*` variables so the coding agent
-  itself runs on a DigitalOcean-hosted model. The Claude Code harness also expects
-  `ANTHROPIC_API_KEY` / `ANTHROPIC_BASE_URL`; both point at DO Serverless Inference with the
-  same model access key, so no Anthropic (or OpenAI) account is involved. To bring your own key instead, replace them with
+- The harness is **OpenCode** and the spec uses the platform's `HARNESS_INFERENCE_*`
+  variables, so the coding agent itself runs on a DigitalOcean-hosted model with your model
+  access key. No Anthropic or OpenAI account is involved. Switching harness is one line
+  (`agent:`); Claude Code and Codex also accept the same DO-hosted settings. To bring your own key instead, replace them with
   `ANTHROPIC_MODEL` in `env` and `ANTHROPIC_API_KEY` in `secrets`.
 - GitHub access is `GITHUB_TOKEN: "oauth/github"` in `secrets`, minted from the team's OAuth
   connection. The agent never sees a personal access token. Sessions are team-level, so use a
