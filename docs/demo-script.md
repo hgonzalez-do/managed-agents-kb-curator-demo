@@ -21,7 +21,7 @@ App Platform, Spaces.
 
 **3. Trigger the agent (30 s).** Instead of waiting for Monday's cron, run
 `scripts/06-run-curator-now.sh`. It creates a fresh session from the same spec the trigger
-uses, sends the one-line prompt, and attaches. Run it with `--dry-run` first if you want to
+uses, sends the runbook as the prompt, and attaches. Run it with `--dry-run` first if you want to
 show the resolved manifest with secrets redacted. (Or, if you created the webhook trigger,
 publish a release on a fork of doctl and let GitHub fire it.)
 
@@ -47,7 +47,10 @@ App Platform redeployed on push so `/api/releases` is also current.
   live: ask the agent to clone `https://github.com/digitalocean/sample-python` and watch the
   policy block it. For an attended session, set `default: ask` and a `git push` rule with
   `action: ask`; the run pauses for a human.
-- `skills:` the runbook rides along with the agent; the trigger prompt is one sentence.
+- `skills:` the runbook rides along with the agent (and is sent as the prompt until skills
+  are enforced).
+- `tools:` (commented) shows the Action Gateway upgrade path: GitHub via a managed MCP
+  endpoint, no token in the sandbox. See docs/action-gateway-variant.md.
 - Triggers: `doctl agent triggers list` shows the weekly cron; `list-executions` shows each
   run with its session ID, so `doctl agent logs <session>` replays the transcript.
 - Checkpoints: `doctl agent checkpoint create` then `fork --count 3` to try three summary

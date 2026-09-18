@@ -92,9 +92,10 @@ wait_for_kb_index() {
 
 banner() { printf '\n==> %s\n' "$*"; }
 
-# The message every trigger (and the live run) sends to the agent. The details live in the
-# doctl-docs-curator skill embedded in the spec.
-TRIGGER_PROMPT="Use the doctl-docs-curator skill. Check for new doctl releases, update the docs, push, sync Spaces, re-index the knowledge base, and finish with the run report."
+# The message every trigger (and the live run) sends to the agent. It carries the full
+# runbook, because skills are accepted by the platform but not yet enforced in the preview.
+# The same runbook is also embedded in the spec as a skill for when that lands.
+TRIGGER_PROMPT="$(printf 'You are running the doctl docs curator. Follow this runbook exactly and finish with the run report.\n\n%s' "$(cat "$ROOT/agent/prompts/curator.md")")"
 
 # render_agent_spec — expand ${VARS} in agent/spec.yaml and splice in the runbook as a skill.
 # Prints the path of the rendered file.

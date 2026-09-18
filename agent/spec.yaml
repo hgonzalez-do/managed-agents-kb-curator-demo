@@ -42,9 +42,10 @@ env:                          # plaintext, non-secret only (debug-readable in th
 # Slot name = guest env var. Values are write-only tenant secrets stored in Secrets Manager
 # and never echoed.
 # GITHUB_TOKEN: by default the brokered OAuth slot (doctl agent auth github), which carries the
-# connected account's full repo access. To lock the agent to ONE repository at the credential
-# level, set GITHUB_FINE_GRAINED_PAT in .env to a fine-grained PAT scoped to that repo
-# (Contents: read/write); the renderer substitutes it here as a tenant secret.
+# connected account's full repo access. NOTE: in the current preview the oauth/github slot is
+# accepted but not yet enforced, so prefer GITHUB_FINE_GRAINED_PAT in .env: a fine-grained PAT
+# scoped to this one repo (Contents: read/write). The renderer substitutes it here as a tenant
+# secret, which also locks the agent to that repository at the credential level.
 secrets:
   HARNESS_INFERENCE_API_KEY: "${MODEL_ACCESS_KEY}"     # Serverless Inference model access key
   GITHUB_TOKEN: "oauth/github"
@@ -69,8 +70,17 @@ max_lifetime: 1h              # hard ceiling for a curator run
 #   - pypi.org
 #   - files.pythonhosted.org
 
+# --- tools (Action Gateway) -------------------------------------------------
+# Optional v2: give the agent GitHub and web access through Action Gateway instead of tokens
+# in the sandbox. Credentials then never enter the sandbox or the model context. Accepted but
+# not yet enforced in the preview; see docs/action-gateway-variant.md before enabling.
+# tools:
+#   - do.actions: [github, exa_web_fetch]
+# (and add a permissions rule:  - { tool: mcp, action: allow })
+
 # --- skills -----------------------------------------------------------------
-# The runbook travels with the agent; the trigger prompt just invokes it.
+# The runbook travels with the agent as a skill (accepted, not yet enforced in the preview),
+# and is also sent in full as the trigger / session prompt.
 skills:
   - name: doctl-docs-curator
     description: Use when asked to curate doctl docs, process new doctl releases, or refresh the doctl support knowledge base.

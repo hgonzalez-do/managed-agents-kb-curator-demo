@@ -9,7 +9,7 @@ from that knowledge base using **Serverless Inference**. Nobody on the team touc
 - App repo (chatbot + docs): [hgonzalez-do/doctl-support-bot](https://github.com/hgonzalez-do/doctl-support-bot)
 - This repo: deployment scripts, agent spec and prompt, architecture, demo script.
 
-Read next: [docs/architecture.md](docs/architecture.md) · [docs/demo-script.md](docs/demo-script.md) · [docs/other-demo-ideas.md](docs/other-demo-ideas.md)
+Read next: [docs/architecture.md](docs/architecture.md) · [docs/demo-script.md](docs/demo-script.md) · [docs/action-gateway-variant.md](docs/action-gateway-variant.md) · [docs/other-demo-ideas.md](docs/other-demo-ideas.md)
 
 ## What you need
 
@@ -122,8 +122,13 @@ All in `.env.example`. The ones people usually change:
 - Triggered runs are unattended: the policy must not contain `ask`. The spec uses
   `default: allow` plus explicit `deny` rules. Validate it any time with
   `POST /v2/agents/sessions/policy/validate` (step 4 does this for you).
-- The runbook is attached as a **skill**, so the trigger prompt is one sentence and the same
-  spec works for cron, webhook and attached sessions.
+- The runbook is sent in full as the trigger / session prompt and is also attached as a
+  **skill** (skills are accepted but not yet enforced in the preview). One runbook file,
+  `agent/prompts/curator.md`, drives cron, webhook and attended sessions alike.
+- GitHub OAuth (`oauth/github`) is likewise accepted but not yet enforced. Until it is, set
+  `GITHUB_FINE_GRAINED_PAT` (one-repo token) so the agent can push.
+- Action Gateway can replace the in-sandbox tokens later; see
+  [docs/action-gateway-variant.md](docs/action-gateway-variant.md).
 - `doctl agent start <spec> --prompt "..."` sends the prompt as soon as the session is ready;
   add `--on-hitl approve` for a headless run, or `--dry-run` to print the resolved manifest
   with secrets redacted. `doctl agent prompt <session> "..."` sends a follow-up.

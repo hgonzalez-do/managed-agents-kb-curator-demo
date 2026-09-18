@@ -9,4 +9,4 @@ require AGENT_NAME AGENT_MODEL AGENT_SIZE MODEL_ACCESS_KEY DO_API_TOKEN SPACES_A
 export SPACES_PREFIX="${SPACES_PREFIX:-docs}"
 SPEC="$(render_agent_spec)"
 echo "Rendered: $SPEC"
-echo "Prompt:   $TRIGGER_PROMPT"
+echo "Prompt:   agent/prompts/curator.md (pass it with: --prompt \"\$(cat agent/prompts/curator.md)\")"

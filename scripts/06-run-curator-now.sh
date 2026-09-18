@@ -26,6 +26,6 @@ case "${1:-}" in
 esac
 
 banner "Session $SESSION  (about 10-15 s to first prompt)"
-echo "  prompt: $TRIGGER_PROMPT"
+echo "  prompt: full runbook from agent/prompts/curator.md"
 echo
 doctl agent start "$SPEC" --name "$SESSION" --prompt "$TRIGGER_PROMPT" "${MODE_ARGS[@]}"
