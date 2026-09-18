@@ -1,5 +1,5 @@
 # App Platform spec for the doctl Support Bot.
-# ${VARS} are substituted by scripts/03-deploy-app.sh from .env / .state.env.
+# Variable placeholders are substituted by scripts/03-deploy-app.sh from .env / .state.env.
 name: ${APP_NAME}
 region: ${APP_REGION}
 services:

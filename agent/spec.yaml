@@ -1,6 +1,6 @@
 # DigitalOcean Managed Agents (Open Harness) spec — doctl docs & knowledge-base curator.
 #
-# Rendered by scripts/04-create-trigger.sh: ${VARS} come from .env / .state.env and
+# Rendered by scripts/04-create-trigger.sh: variable placeholders come from .env / .state.env and
 # the runbook placeholder under skills.instructions is replaced with agent/prompts/curator.md.
 # Schema per the Managed Agents Design Partner Guide (Aug 2026).
 
@@ -20,6 +20,7 @@ env:
   # The agent's own model, served by DigitalOcean Serverless Inference.
   HARNESS_INFERENCE_BASE_URL: "https://inference.do-ai.run/v1"
   HARNESS_INFERENCE_MODEL: ${AGENT_MODEL}
+  ANTHROPIC_MODEL: ${AGENT_MODEL}          # the claude-code adapter also reads this name
   # Curator inputs (read by the runbook and the scripts in the app repo).
   SOURCE_REPO: digitalocean/doctl
   GITHUB_OWNER: ${GITHUB_OWNER}
