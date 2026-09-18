@@ -1,27 +1,30 @@
-# DigitalOcean Managed Agents (Open Harness) spec — doctl docs & knowledge-base curator.
+# DigitalOcean Managed Agents (MARS / Open Harness) agent spec — doctl docs & KB curator.
 #
-# Rendered by scripts/04-create-trigger.sh: variable placeholders come from .env / .state.env and
-# the runbook placeholder under skills.instructions is replaced with agent/prompts/curator.md.
-# Schema per the Managed Agents Design Partner Guide (Aug 2026).
+# Rendered by scripts/render-agent-spec.sh (or 04/06): variable placeholders are expanded
+# from .env / .state.env and the runbook placeholder under skills.instructions is replaced
+# with agent/prompts/curator.md. Import the rendered file in the console, save it as a
+# reusable Agent Config (`doctl agent config create --spec`), or pass it to
+# `doctl agent start` / `doctl agent triggers create`.
 
+# --- identity ---------------------------------------------------------------
 name: ${AGENT_NAME}
-agent: claude-code                 # codex | opencode | claude-code | langgraph
-template: coding                   # Git, Node, Python toolchain
-size: ${AGENT_SIZE}                # see: GET /v2/agents/sessions/sandbox/sizes
-persistent_workspace: true
+description: Weekly curator that turns doctl release notes into support docs, syncs them to Spaces and re-indexes the Gradient Knowledge Base behind the doctl support bot.
+labels:
+  demo: managed-agents-kb-curator
+  owner: ${GITHUB_OWNER}
 
-# Repos the session may work with (authenticated through the team's GitHub OAuth connection).
-repos:
+# --- runtime ----------------------------------------------------------------
+agent: claude-code            # claude-code | opencode | codex | hermes | langgraph | custom
+model: ${AGENT_MODEL}         # DO-hosted model, served by Serverless Inference
+
+# --- workspace / env --------------------------------------------------------
+repos:                        # first entry is the repo hint
   - ${GITHUB_OWNER}/${APP_REPO}
 
-# Non-sensitive configuration only. Values here are stored as-is and are debug-readable
-# inside the sandbox, so no credentials.
-env:
-  # The agent's own model, served by DigitalOcean Serverless Inference.
+env:                          # plaintext, non-secret only (debug-readable in the sandbox)
   HARNESS_INFERENCE_BASE_URL: "https://inference.do-ai.run/v1"
   HARNESS_INFERENCE_MODEL: ${AGENT_MODEL}
-  ANTHROPIC_MODEL: ${AGENT_MODEL}          # the claude-code adapter reads the model name from here too
-  # Curator inputs (read by the runbook and the scripts in the app repo).
+  ANTHROPIC_MODEL: ${AGENT_MODEL}         # the claude-code adapter reads the model name from here too
   SOURCE_REPO: digitalocean/doctl
   GITHUB_OWNER: ${GITHUB_OWNER}
   APP_REPO: ${APP_REPO}
@@ -30,51 +33,88 @@ env:
   SPACES_BUCKET: ${SPACES_BUCKET}
   SPACES_REGION: ${SPACES_REGION}
   SPACES_PREFIX: ${SPACES_PREFIX}
-  # Git identity for the commits the agent makes.
   GIT_AUTHOR_NAME: "doctl docs curator (Managed Agent)"
   GIT_AUTHOR_EMAIL: "docs-curator@users.noreply.github.com"
   GIT_COMMITTER_NAME: "doctl docs curator (Managed Agent)"
   GIT_COMMITTER_EMAIL: "docs-curator@users.noreply.github.com"
 
-# Credentials. Routed to DigitalOcean Secrets Manager at create time; write-only, never
-# returned by any API call, not written to platform logs or traces.
+# --- secrets ----------------------------------------------------------------
+# Slot name = guest env var. Values are write-only tenant secrets stored in Secrets Manager
+# and never echoed. GITHUB_TOKEN is a brokered OAuth slot (doctl agent auth github).
 secrets:
   HARNESS_INFERENCE_API_KEY: "${MODEL_ACCESS_KEY}"     # Serverless Inference model access key
-  GITHUB_TOKEN: "oauth/github"                         # minted from `doctl agent auth github`
+  GITHUB_TOKEN: "oauth/github"
   DIGITALOCEAN_ACCESS_TOKEN: "${DO_API_TOKEN}"         # KB indexing jobs + retrieve check
   SPACES_ACCESS_KEY: "${SPACES_ACCESS_KEY}"
   SPACES_SECRET_KEY: "${SPACES_SECRET_KEY}"
 
-# Policy. Triggered runs are unattended, so `ask` is not available (the platform rejects
-# it at trigger creation). Allow by default and deny the things a curator must never do.
-# Rules match literally on commands, so cover the obvious variants.
+# --- execution environment --------------------------------------------------
+size: ${AGENT_SIZE}           # GET /v2/agents/sessions/sandbox/sizes
+persistent_workspace: true    # keep the clone across suspends (attended sessions)
+idle_timeout: 15m             # suspend after idle
+max_lifetime: 1h              # hard ceiling for a curator run
+# Tighten egress once a run has been observed end to end (request only; server narrows):
+# egress:
+#   - github.com
+#   - api.github.com
+#   - api.digitalocean.com
+#   - kbaas.do-ai.run
+#   - inference.do-ai.run
+#   - ${SPACES_REGION}.digitaloceanspaces.com
+#   - ${SPACES_BUCKET}.${SPACES_REGION}.digitaloceanspaces.com
+#   - pypi.org
+#   - files.pythonhosted.org
+
+# --- skills -----------------------------------------------------------------
+# The runbook travels with the agent; the trigger prompt just invokes it.
+skills:
+  - name: doctl-docs-curator
+    description: Use when asked to curate doctl docs, process new doctl releases, or refresh the doctl support knowledge base.
+    instructions: |
+__CURATOR_RUNBOOK__
+    metadata:
+      author: digitalocean-demo
+    allowed_tools: [bash, file.read, file.write]
+
+# --- permissions ------------------------------------------------------------
+# Triggered runs are unattended, so `ask` is not allowed (rejected at trigger creation).
+# Allow by default; strict deny on anything a curator must never do. Rules match literally.
 permissions:
   default: allow
   rules:
     - tool: bash
       match: { command: "rm -rf *" }
       action: deny
+      enforcement: strict
     - tool: bash
       match: { command: "git push --force*" }
       action: deny
+      enforcement: strict
     - tool: bash
       match: { command: "git push -f *" }
       action: deny
+      enforcement: strict
     - tool: bash
       match: { command: "git push * --force*" }
       action: deny
+      enforcement: strict
     - tool: bash
       match: { command: "curl * | sh" }
       action: deny
+      enforcement: strict
     - tool: bash
       match: { command: "curl * | bash" }
       action: deny
+      enforcement: strict
+  filesystem:
+    mode: workspace-write
+    allow_write: [/tmp]
 
-# The runbook travels with the agent as a skill: the trigger prompt just invokes it.
-skills:
-  - name: doctl-docs-curator
-    description: Use when asked to curate doctl docs, process new doctl releases, or refresh the doctl support knowledge base.
-    instructions: |
-__CURATOR_RUNBOOK__
-    metadata: { author: digitalocean-demo }
-    allowed_tools: [bash, file.read, file.write]
+# --- budget (advisory ceilings) ---------------------------------------------
+budget:
+  max_cost_usd: 5.0
+  max_steps: 300
+  max_wall_clock: 45m
+  on_breach: pause
+
+mode: interactive

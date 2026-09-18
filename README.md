@@ -109,7 +109,11 @@ All in `.env.example`. The ones people usually change:
 - `doctl agent …` ships in the doctl **beta** build (GitHub pre-release), not the standard
   release. Your DigitalOcean contact must also enable the feature on your team; until then
   agent commands return 404.
-- `agent/spec.yaml` uses the platform's `HARNESS_INFERENCE_*` variables so the coding agent
+- `agent/spec.yaml` follows the full MARS agents.yaml format (identity, runtime, repos, env,
+  secrets, size/timeouts, skills, permissions, budget). The rendered file can be imported in
+  the console as an Agent, saved with `doctl agent config create --spec`, or passed directly to
+  `doctl agent start` / `doctl agent triggers create`.
+- The spec uses the platform's `HARNESS_INFERENCE_*` variables so the coding agent
   itself runs on a DigitalOcean-hosted model. To bring your own key instead, replace them with
   `ANTHROPIC_MODEL` in `env` and `ANTHROPIC_API_KEY` in `secrets`.
 - GitHub access is `GITHUB_TOKEN: "oauth/github"` in `secrets`, minted from the team's OAuth
