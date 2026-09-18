@@ -6,7 +6,7 @@ engine, cron/webhooks, GitHub OAuth, checkpoints, managed secrets).
 
 | # | Demo | What the agent does | Extra DO products | Best for |
 |---|------|---------------------|-------------------|----------|
-| 1 | **Docs & knowledge-base curator** (this repo) | Weekly: read releases, write docs, regenerate index, push, re-index KB | Knowledge Bases, App Platform, Spaces | Dev-tool and API-first companies |
+| 1 | **Docs & knowledge-base curator** (this repo) | Weekly, OpenCode harness on a DO-hosted model: read releases, write docs, regenerate index, push, re-index KB | Knowledge Bases, App Platform, Spaces | Dev-tool and API-first companies |
 | 2 | **Nightly dependency & CVE fixer** | Cron: scan `package.json`/`go.mod`, bump vulnerable deps, run tests in the sandbox, open a PR. Policy requires approval for major bumps. | Container Registry, App Platform (preview deploy of the PR) | Any SaaS team; security-conscious buyers |
 | 3 | **Incident triage bot** | Webhook from Uptime/Monitoring alert: pull logs via the DO API, correlate with recent deploys, draft a root-cause note and a fix PR; pause for approval before deploying | Monitoring/Uptime, App Platform, Managed Databases (read replica for queries) | Ops and platform teams |
 | 4 | **Data-warehouse migration assistant** | Fork one checkpointed session into N parallel copies, each tries a migration strategy against a scratch DB; keep the winner | Managed PostgreSQL, Spaces | Companies moving off another cloud; shows checkpoints and forking |

@@ -10,7 +10,7 @@ in the curation loop serves users.
 flowchart TB
   subgraph CUR["Curation loop — Managed Agent, weekly cron (Mon 09:00 UTC), unattended"]
     direction TB
-    TRG[Cron trigger<br/>fresh session from agent spec] --> SESS[Sandbox session<br/>Claude Code harness<br/>model: deepseek-v4-pro via Serverless Inference]
+    TRG[Cron trigger<br/>fresh session from agent spec] --> SESS[Sandbox session<br/>OpenCode harness<br/>model: deepseek-v4-pro via Serverless Inference]
     SESS -->|1. git clone both repos| REPO
     SESS -.->|1. git clone, read-only| TOOLS[(GitHub<br/>managed-agents-kb-curator-demo<br/>curator/ tooling)]
     SESS -->|2. curator/releases.py fetch| GHREL[(GitHub API<br/>digitalocean/doctl releases)]

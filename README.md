@@ -72,7 +72,7 @@ doctl agent auth github     # connects your team's GitHub account (browser flow)
 
 ```mermaid
 flowchart LR
-  CRON[Weekly cron] --> AGENT[Managed Agent<br/>Claude Code sandbox]
+  CRON[Weekly cron] --> AGENT[Managed Agent<br/>OpenCode sandbox]
   SRC[(doctl releases)] --> AGENT
   AGENT -->|git push| REPO[(App repo /docs)]
   AGENT -->|s3 sync| SPACES[(Spaces)]
@@ -126,8 +126,7 @@ All in `.env.example`. The ones people usually change:
 - The harness is **OpenCode** and the spec uses the platform's `HARNESS_INFERENCE_*`
   variables, so the coding agent itself runs on a DigitalOcean-hosted model with your model
   access key. No Anthropic or OpenAI account is involved. Switching harness is one line
-  (`agent:`); Claude Code and Codex also accept the same DO-hosted settings. To bring your own key instead, replace them with
-  `ANTHROPIC_MODEL` in `env` and `ANTHROPIC_API_KEY` in `secrets`.
+  (`agent:`); Claude Code and Codex also accept the same DO-hosted settings.
 - GitHub access is `GITHUB_TOKEN: "oauth/github"` in `secrets`, minted from the team's OAuth
   connection. The agent never sees a personal access token. Sessions are team-level, so use a
   dedicated GitHub account for `doctl agent auth github` in a real deployment.
