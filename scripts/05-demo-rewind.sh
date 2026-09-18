@@ -15,7 +15,7 @@ APP_DIR="$APP_REPO_PATH"; [ -d "$APP_DIR" ] || APP_DIR="$ROOT/$APP_REPO_PATH"
 
 banner "Rewinding docs by $N release(s) in $APP_DIR"
 ( cd "$APP_DIR"
-  python3 curator/releases.py rewind --count "$N"
+  python3 "$ROOT/curator/releases.py" rewind --count "$N"
   git add docs
   git commit -q -m "demo: rewind docs by $N release(s) to stage curator run" || echo "  nothing to commit"
   git push -q origin main
@@ -24,8 +24,8 @@ banner "Rewinding docs by $N release(s) in $APP_DIR"
 
 banner "Sync Spaces + re-index knowledge base"
 export SPACES_PREFIX="${SPACES_PREFIX:-docs}"
-"$APP_DIR/curator/sync-docs-to-spaces.sh"
-"$APP_DIR/curator/reindex-kb.sh"
+APP_REPO_DIR="$APP_DIR" "$ROOT/curator/sync-docs-to-spaces.sh"
+"$ROOT/curator/reindex-kb.sh"
 
 echo
 echo "Staged. Docs are now current through: $(jq -r .last_processed_tag "$APP_DIR/docs/curator-state.json")"

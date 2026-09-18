@@ -19,7 +19,8 @@ model: ${AGENT_MODEL}         # DO-hosted model, served by Serverless Inference
 
 # --- workspace / env --------------------------------------------------------
 repos:                        # first entry is the repo hint
-  - ${GITHUB_OWNER}/${APP_REPO}
+  - ${GITHUB_OWNER}/${APP_REPO}          # the docs live here (written by the agent)
+  - ${GITHUB_OWNER}/${CURATOR_REPO}      # this repo: curator/ tooling (read-only for the agent)
 
 env:                          # plaintext, non-secret only (debug-readable in the sandbox)
   HARNESS_INFERENCE_BASE_URL: "https://inference.do-ai.run/v1"
@@ -28,6 +29,7 @@ env:                          # plaintext, non-secret only (debug-readable in th
   SOURCE_REPO: digitalocean/doctl
   GITHUB_OWNER: ${GITHUB_OWNER}
   APP_REPO: ${APP_REPO}
+  CURATOR_REPO: ${CURATOR_REPO}
   KB_UUID: ${KB_UUID}
   KB_DATA_SOURCE_UUID: ${KB_DATA_SOURCE_UUID}
   SPACES_BUCKET: ${SPACES_BUCKET}
@@ -101,6 +103,9 @@ permissions:
     # -- git is confined to this one repository and branch --
     - tool: bash
       match: { command: "git clone https://github.com/${GITHUB_OWNER}/${APP_REPO}*" }
+      action: allow
+    - tool: bash
+      match: { command: "git clone https://github.com/${GITHUB_OWNER}/${CURATOR_REPO}*" }
       action: allow
     - tool: bash
       match: { command: "git clone *" }

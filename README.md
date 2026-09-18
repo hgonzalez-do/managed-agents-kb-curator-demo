@@ -6,8 +6,9 @@ GitHub repo, regenerates a machine-readable release index, syncs the docs to **S
 and re-indexes a **Gradient Knowledge Base**. A support chatbot on **App Platform** answers
 from that knowledge base using **Serverless Inference**. Nobody on the team touches it.
 
-- App repo (chatbot + docs): [hgonzalez-do/doctl-support-bot](https://github.com/hgonzalez-do/doctl-support-bot)
-- This repo: deployment scripts, agent spec and prompt, architecture, demo script.
+- App repo (App Platform code + the docs it answers from): [hgonzalez-do/doctl-support-bot](https://github.com/hgonzalez-do/doctl-support-bot)
+- This repo: everything about the agent (spec, runbook, `curator/` tooling), deployment scripts,
+  architecture, demo script. The agent clones both repos; it only writes to the app repo's `docs/`.
 
 Read next: [docs/architecture.md](docs/architecture.md) · [docs/demo-script.md](docs/demo-script.md) · [docs/action-gateway-variant.md](docs/action-gateway-variant.md) · [docs/other-demo-ideas.md](docs/other-demo-ideas.md)
 
@@ -34,6 +35,12 @@ git clone https://github.com/hgonzalez-do/doctl-support-bot.git
 git clone https://github.com/hgonzalez-do/managed-agents-kb-curator-demo.git
 cd managed-agents-kb-curator-demo
 cp .env.example .env        # fill in tokens, bucket name, GitHub owner
+```
+
+Seeding docs for a fresh fork of the app repo (skip if `docs/` already has content):
+
+```bash
+APP_REPO_DIR=../doctl-support-bot python3 curator/releases.py bootstrap --count 6
 ```
 
 Then run the scripts in order. Each one is short, idempotent and prints what it did.
@@ -81,6 +88,7 @@ flowchart LR
 
 ```
 .env.example                 every variable you might change, with comments
+curator/                     what the agent runs: releases.py, sync-docs-to-spaces.sh, reindex-kb.sh
 scripts/lib.sh               shared helpers (env loading, templating, API polling)
 scripts/0*-*.sh              numbered setup / demo / cleanup steps
 app-platform/app.yaml        App Platform spec, GitHub source with deploy-on-push (needs GitHub linked to DO)
@@ -97,6 +105,7 @@ All in `.env.example`. The ones people usually change:
 | Variable | Default | Meaning |
 |---|---|---|
 | `GITHUB_OWNER` / `APP_REPO` | `hgonzalez-do` / `doctl-support-bot` | Repo the agent maintains and App Platform deploys |
+| `CURATOR_REPO` | `managed-agents-kb-curator-demo` | This repo; the agent clones it for `curator/` |
 | `SPACES_REGION` / `SPACES_BUCKET` | `nyc3` / (unique name) | KB data source |
 | `KB_REGION` | `tor1` | Knowledge base region |
 | `INFERENCE_MODEL` | `llama-4-maverick` | Chatbot model (any DO-hosted catalog model ID) |

@@ -11,7 +11,8 @@ flowchart TB
   subgraph CUR["Curation loop — Managed Agent, weekly cron (Mon 09:00 UTC), unattended"]
     direction TB
     TRG[Cron trigger<br/>fresh session from agent spec] --> SESS[Sandbox session<br/>Claude Code harness<br/>model: deepseek-v4-pro via Serverless Inference]
-    SESS -->|1. git clone| REPO
+    SESS -->|1. git clone both repos| REPO
+    SESS -.->|1. git clone, read-only| TOOLS[(GitHub<br/>managed-agents-kb-curator-demo<br/>curator/ tooling)]
     SESS -->|2. curator/releases.py fetch| GHREL[(GitHub API<br/>digitalocean/doctl releases)]
     SESS -->|3. write docs/releases/&lt;tag&gt;.md<br/>4. releases.py index| WS[/workspace: docs/ changelog,<br/>release-index.json, bookmark/]
     WS -->|5. git push origin main| REPO[(GitHub<br/>hgonzalez-do/doctl-support-bot)]
@@ -47,17 +48,17 @@ Credentials, by component:
 
 ```mermaid
 flowchart LR
-  subgraph APPREPO["hgonzalez-do/doctl-support-bot  (deployed by App Platform, cloned by the agent)"]
+  subgraph APPREPO["hgonzalez-do/doctl-support-bot  (App Platform code + docs; cloned by the agent to update docs/)"]
     direction TB
     A1[server.js<br/>HTTP server: static UI, /api/chat, /api/releases, /api/health]
     A2[public/index.html<br/>chat UI with source chips and release badge]
     A3[docs/<br/>changelog.md, releases/&lt;tag&gt;.md,<br/>release-index.json, curator-state.json]
-    A4[curator/<br/>releases.py, sync-docs-to-spaces.sh, reindex-kb.sh]
     A5[package.json, .env.example, README.md]
   end
 
   subgraph DEMOREPO["hgonzalez-do/managed-agents-kb-curator-demo  (operator tooling, shareable)"]
     direction TB
+    A4[curator/<br/>releases.py, sync-docs-to-spaces.sh, reindex-kb.sh]
     D1[.env.example<br/>every variable a customer replaces]
     D2[scripts/00-07 + lib.sh<br/>preflight, bucket, KB, app, trigger,<br/>demo rewind, live run, cleanup]
     D3[scripts/render-agent-spec.sh<br/>renders the spec, prints doctl agent commands]
@@ -71,7 +72,7 @@ flowchart LR
   APP((App Platform<br/>service)) -->|runs| A1
   A1 --> A2
   A1 -.->|fallback only| A3
-  AGENT((Managed Agent<br/>session)) -->|clones repo, runs| A4
+  AGENT((Managed Agent<br/>session)) -->|clones both repos, runs| A4
   A4 -->|reads and writes| A3
   A4 -->|syncs| SPACES[(Spaces)]
   A4 -->|re-indexes| KB[Gradient KB]
@@ -92,17 +93,20 @@ flowchart LR
 - **Docs in git, not just in the KB.** Every change the agent makes is a commit a human can
   review, revert or diff. The KB is a projection of the repo; Spaces is the transport because
   Knowledge Bases ingest from Spaces (there is no GitHub data source).
-- **A deterministic core with an LLM around it.** `curator/releases.py` does fetching, parsing
-  and index regeneration. The agent's judgment is spent on the part that needs it: writing
+- **A deterministic core with an LLM around it.** `curator/releases.py` (in this repo) does
+  fetching, parsing and index regeneration. The agent's judgment is spent on the part that needs it: writing
   summaries and upgrade notes a support engineer would want.
 - **Retrieval separated from generation.** The bot calls the KB retrieve API directly and
   passes chunks to Serverless Inference. Model choice is a config value (`INFERENCE_MODEL`).
 - **Read-live release index.** The chatbot fetches `release-index.json` from GitHub with a
   60 s cache, so its "docs current through" badge flips the moment the agent pushes, whether
   or not App Platform redeploys.
-- **Least privilege by construction.** The app runs with a read token. The agent is confined
-  to one repo three ways: credential scope (fine-grained PAT), policy rules (clone/push only
-  that repo), and the runbook.
+- **Clean split of repos.** The app repo is only App Platform code plus the docs it answers
+  from. Everything about the agent (spec, runbook, tooling) lives in this repo, which the agent
+  clones read-only.
+- **Least privilege by construction.** The app runs with a read token. The agent may clone
+  exactly two repos and push to exactly one (`git push origin main` in the app repo), enforced
+  by credential scope (fine-grained PAT), policy rules, and the runbook.
 
 ## The "OpenAPI spec" step, adapted
 
