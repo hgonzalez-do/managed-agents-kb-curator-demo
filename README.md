@@ -50,6 +50,10 @@ Generated IDs are saved to `.state.env` so later scripts pick them up.
 | 6 | `scripts/06-run-curator-now.sh` | runs the curator now from the same spec: attached (default), `--headless`, or `--dry-run` to print the resolved manifest |
 | 7 | `scripts/07-cleanup.sh` | deletes everything above |
 
+Prefer to run the Managed Agents commands by hand? `scripts/render-agent-spec.sh` writes the
+fully rendered spec to `.rendered/agent-spec.yaml`; pass that file to `doctl agent validate`,
+`doctl agent start` or `doctl agent triggers create` directly.
+
 One-time, before step 4:
 
 ```bash
