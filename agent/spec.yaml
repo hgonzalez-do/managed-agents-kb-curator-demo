@@ -23,9 +23,12 @@ repos:                        # first entry is the repo hint
   - ${GITHUB_OWNER}/${CURATOR_REPO}      # this repo: curator/ tooling (read-only for the agent)
 
 env:                          # plaintext, non-secret only (debug-readable in the sandbox)
+  # The agent's model is DO-hosted. The claude-code harness reads Anthropic-named settings,
+  # so they are pointed at DigitalOcean Serverless Inference; no Anthropic account involved.
   HARNESS_INFERENCE_BASE_URL: "https://inference.do-ai.run/v1"
   HARNESS_INFERENCE_MODEL: ${AGENT_MODEL}
-  ANTHROPIC_MODEL: ${AGENT_MODEL}         # the claude-code adapter reads the model name from here too
+  ANTHROPIC_BASE_URL: "https://inference.do-ai.run"
+  ANTHROPIC_MODEL: ${AGENT_MODEL}
   SOURCE_REPO: digitalocean/doctl
   GITHUB_OWNER: ${GITHUB_OWNER}
   APP_REPO: ${APP_REPO}
@@ -50,6 +53,7 @@ env:                          # plaintext, non-secret only (debug-readable in th
 # secret, which also locks the agent to that repository at the credential level.
 secrets:
   HARNESS_INFERENCE_API_KEY: "${MODEL_ACCESS_KEY}"     # Serverless Inference model access key
+  ANTHROPIC_API_KEY: "${MODEL_ACCESS_KEY}"             # same DO key; the slot name is what the harness expects
   GITHUB_TOKEN: "oauth/github"
   DIGITALOCEAN_ACCESS_TOKEN: "${DO_API_TOKEN}"         # KB indexing jobs + retrieve check
   SPACES_ACCESS_KEY: "${SPACES_ACCESS_KEY}"

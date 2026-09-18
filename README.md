@@ -124,7 +124,9 @@ All in `.env.example`. The ones people usually change:
   the console as an Agent, saved with `doctl agent config create --spec`, or passed directly to
   `doctl agent start` / `doctl agent triggers create`.
 - The spec uses the platform's `HARNESS_INFERENCE_*` variables so the coding agent
-  itself runs on a DigitalOcean-hosted model. To bring your own key instead, replace them with
+  itself runs on a DigitalOcean-hosted model. The Claude Code harness also expects
+  `ANTHROPIC_API_KEY` / `ANTHROPIC_BASE_URL`; both point at DO Serverless Inference with the
+  same model access key, so no Anthropic (or OpenAI) account is involved. To bring your own key instead, replace them with
   `ANTHROPIC_MODEL` in `env` and `ANTHROPIC_API_KEY` in `secrets`.
 - GitHub access is `GITHUB_TOKEN: "oauth/github"` in `secrets`, minted from the team's OAuth
   connection. The agent never sees a personal access token. Sessions are team-level, so use a
