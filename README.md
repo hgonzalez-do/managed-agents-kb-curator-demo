@@ -98,8 +98,8 @@ All in `.env.example`. The ones people usually change:
 | `GITHUB_OWNER` / `APP_REPO` | `hgonzalez-do` / `doctl-support-bot` | Repo the agent maintains and App Platform deploys |
 | `SPACES_REGION` / `SPACES_BUCKET` | `nyc3` / (unique name) | KB data source |
 | `KB_REGION` | `tor1` | Knowledge base region |
-| `INFERENCE_MODEL` | `anthropic-claude-haiku-4.5` | Chatbot model (any catalog model ID) |
-| `AGENT_MODEL` | `anthropic-claude-4.5-sonnet` | Model the coding agent uses |
+| `INFERENCE_MODEL` | `llama-4-maverick` | Chatbot model (any DO-hosted catalog model ID) |
+| `AGENT_MODEL` | `deepseek-v4-pro` | DO-hosted model the coding agent uses |
 | `AGENT_SIZE` | `mars-2vcpu-4gb` | Sandbox size |
 | `AGENT_CRON` / `AGENT_TIMEZONE` | `0 9 * * 1` / `UTC` | Curator schedule |
 | `OUTPUT_MODE` / `OUTPUT_EMAIL` | `email` | Where each run's report is delivered |
