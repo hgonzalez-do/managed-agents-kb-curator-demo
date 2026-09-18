@@ -41,8 +41,8 @@ GitHub access : $GH_MODE
   --spec "$SPEC" --prompt "\$(cat $PROMPT_FILE)" \\
   --cron-expr "${AGENT_CRON:-0 9 * * 1}" --timezone ${AGENT_TIMEZONE:-UTC} $OUT_ARGS
 
-# after editing the runbook: push the new prompt into an existing trigger
-"$DOCTL" agent triggers update ${TRIGGER_ID:-<trigger-id>} --prompt "\$(cat $PROMPT_FILE)"
+# after editing the spec or runbook: push both into the existing trigger
+"$DOCTL" agent triggers update ${TRIGGER_ID:-<trigger-id>} --spec "$SPEC" --prompt "\$(cat $PROMPT_FILE)"
 
 # afterwards
 "$DOCTL" agent logs ${AGENT_NAME}-live-1
