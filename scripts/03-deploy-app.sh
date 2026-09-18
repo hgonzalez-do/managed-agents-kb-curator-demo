@@ -10,14 +10,26 @@ export DO_API_TOKEN_READ="${DO_API_TOKEN_READ:-$DO_API_TOKEN}"
 
 mkdir -p "$RENDERED_DIR"
 SPEC="$RENDERED_DIR/app.yaml"
-render "$ROOT/app-platform/app.yaml" > "$SPEC"
+case "${APP_SOURCE:-github}" in
+  github) TEMPLATE="$ROOT/app-platform/app.yaml" ;;             # deploy on push; needs GitHub linked to DO
+  git)    TEMPLATE="$ROOT/app-platform/app.public-git.yaml" ;;  # public clone URL; no GitHub link needed
+  *) echo "APP_SOURCE must be github or git" >&2; exit 1 ;;
+esac
+echo "Using $TEMPLATE (APP_SOURCE=${APP_SOURCE:-github})"
+render "$TEMPLATE" > "$SPEC"
 
 if [ -n "${APP_ID:-}" ]; then
   banner "Updating app $APP_ID"
   doctl apps update "$APP_ID" --spec "$SPEC" >/dev/null
 else
   banner "Creating app '$APP_NAME'"
-  APP_ID="$(doctl apps create --spec "$SPEC" -o json | jq -r 'if type=="array" then .[0].id else .id end')"
+  CREATED="$(doctl apps create --spec "$SPEC" -o json 2>&1)" || true
+  APP_ID="$(printf '%s' "$CREATED" | jq -r 'if type=="array" then .[0].id else (.id // empty) end' 2>/dev/null || true)"
+  if [ -z "$APP_ID" ]; then
+    echo "Create failed: $(printf '%s' "$CREATED" | head -c 400)" >&2
+    echo "Hint: 'GitHub user not authenticated' means GitHub is not linked to your DO account (App Platform -> Create App -> GitHub). Either link it, or set APP_SOURCE=git in .env." >&2
+    exit 1
+  fi
   save_state APP_ID "$APP_ID"
 fi
 

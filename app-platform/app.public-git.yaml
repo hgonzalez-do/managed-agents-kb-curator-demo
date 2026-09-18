@@ -1,15 +1,14 @@
-# App Platform spec for the doctl Support Bot (APP_SOURCE=github: deploys on every push).
-# Requires the DigitalOcean GitHub integration to be linked to your account. If it is not,
-# use app.public-git.yaml (APP_SOURCE=git) instead.
+# App Platform spec for the doctl Support Bot (APP_SOURCE=git: clones a public repo URL).
+# Works without linking GitHub to DigitalOcean, but does not redeploy on push; the chatbot
+# still stays current because it reads the release index from GitHub and answers from the KB.
 # Variable placeholders are substituted by scripts/03-deploy-app.sh from .env / .state.env.
 name: ${APP_NAME}
 region: ${APP_REGION}
 services:
   - name: web
-    github:
-      repo: ${GITHUB_OWNER}/${APP_REPO}
+    git:
+      repo_clone_url: https://github.com/${GITHUB_OWNER}/${APP_REPO}.git
       branch: main
-      deploy_on_push: true
     environment_slug: node-js
     run_command: node server.js
     http_port: 8080

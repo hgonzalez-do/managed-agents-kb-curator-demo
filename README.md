@@ -21,7 +21,7 @@ Accounts and keys (all created in the DigitalOcean control panel):
 | API token (GenAI read only) | API → Tokens, scoped | chatbot runtime (optional for a demo) |
 | Model access key | Gradient AI Platform → Serverless Inference | chatbot and the agent's model |
 | Spaces access key pair | API → Spaces Keys | docs sync |
-| GitHub app authorized for your account | App Platform → GitHub | deploy on push |
+| GitHub linked to your DO account | App Platform → Create App → GitHub | deploy on push (`APP_SOURCE=github`); otherwise set `APP_SOURCE=git` |
 | GitHub connected to Managed Agents | `doctl agent auth github` | agent clone/push (`GITHUB_TOKEN: oauth/github`) |
 | Managed Agents private preview | Design Partner Guide | `doctl agent` commands |
 
@@ -78,7 +78,8 @@ flowchart LR
 .env.example                 every variable you might change, with comments
 scripts/lib.sh               shared helpers (env loading, templating, API polling)
 scripts/0*-*.sh              numbered setup / demo / cleanup steps
-app-platform/app.yaml        App Platform spec (templated)
+app-platform/app.yaml        App Platform spec, GitHub source with deploy-on-push (templated)
+app-platform/app.public-git.yaml  same app from a public clone URL (no GitHub link needed)
 agent/spec.yaml              Managed Agents spec (templated; runbook spliced in as a skill)
 agent/prompts/curator.md     the agent's runbook
 docs/                        architecture, demo script, other demo ideas
