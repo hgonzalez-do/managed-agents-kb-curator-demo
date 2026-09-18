@@ -23,10 +23,11 @@ if [ -n "${APP_ID:-}" ]; then
   doctl apps update "$APP_ID" --spec "$SPEC" >/dev/null
 else
   banner "Creating app '$APP_NAME'"
-  CREATED="$(doctl apps create --spec "$SPEC" -o json 2>&1)" || true
-  APP_ID="$(printf '%s' "$CREATED" | jq -r 'if type=="array" then .[0].id else (.id // empty) end' 2>/dev/null || true)"
+  ERR="$RENDERED_DIR/create.err"
+  CREATED="$(doctl apps create --spec "$SPEC" -o json 2>"$ERR")" || true
+  APP_ID="$(printf '%s' "$CREATED" | jq -r 'if type=="array" then .[0].id else (.app.id // .id // empty) end' 2>/dev/null || true)"
   if [ -z "$APP_ID" ]; then
-    echo "Create failed: $(printf '%s' "$CREATED" | head -c 400)" >&2
+    echo "Create failed: $(cat "$ERR" | head -c 400) $(printf '%s' "$CREATED" | head -c 400)" >&2
     echo "Hint: 'GitHub user not authenticated' means GitHub is not linked to your DO account (App Platform -> Create App -> GitHub). Either link it, or set APP_SOURCE=git in .env." >&2
     exit 1
   fi
