@@ -17,7 +17,7 @@ if [ -n "${APP_ID:-}" ]; then
   doctl apps update "$APP_ID" --spec "$SPEC" >/dev/null
 else
   banner "Creating app '$APP_NAME'"
-  APP_ID="$(doctl apps create --spec "$SPEC" -o json | jq -r '.[0].id')"
+  APP_ID="$(doctl apps create --spec "$SPEC" -o json | jq -r 'if type=="array" then .[0].id else .id end')"
   save_state APP_ID "$APP_ID"
 fi
 
@@ -25,13 +25,13 @@ banner "Deployment"
 echo "  Follow progress: doctl apps list-deployments $APP_ID"
 echo "  Waiting for the first deployment to become live (this can take a few minutes)..."
 for _ in $(seq 1 60); do
-  PHASE="$(doctl apps list-deployments "$APP_ID" -o json | jq -r '.[0].phase')"
+  PHASE="$(doctl apps list-deployments "$APP_ID" -o json | jq -r 'if type=="array" then .[0].phase else .phase end')"
   echo "  $(date -u +%H:%M:%S) $PHASE"
   case "$PHASE" in ACTIVE) break ;; ERROR|CANCELED) echo "Deployment failed. See: doctl apps logs $APP_ID --type build"; exit 1 ;; esac
   sleep 15
 done
 
-APP_URL="$(doctl apps get "$APP_ID" -o json | jq -r '.[0].live_url')"
+APP_URL="$(doctl apps get "$APP_ID" -o json | jq -r 'if type=="array" then .[0].live_url else .live_url end')"
 save_state APP_URL "$APP_URL"
 echo; echo "Chatbot is live: $APP_URL"
 curl -sS "$APP_URL/api/health" | jq . || true
