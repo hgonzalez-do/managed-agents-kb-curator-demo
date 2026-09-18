@@ -36,8 +36,8 @@ publish a release on a fork of doctl and let GitHub fire it.)
 - It runs the retrieval check and prints the final report.
 
 **5. The payoff (1 min).** Back to the chatbot. Same question. Now it answers with the
-version, the date, both changes, and cites `v1.168.0.md`. Header now says v1.168.0.
-App Platform redeployed on push so `/api/releases` is also current.
+version, the date, both changes, and cites `v1.168.0.md`. The header now says v1.168.0
+because the app reads the release index live from GitHub; no redeploy was needed.
 
 **6. Controls (1 min).** Open `agent/spec.yaml`:
 - `secrets:` vs `env:` (Secrets Manager; nothing sensitive is debug-readable). `GITHUB_TOKEN`

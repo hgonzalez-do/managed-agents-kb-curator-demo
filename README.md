@@ -25,7 +25,7 @@ Accounts and keys (all created in the DigitalOcean control panel):
 | GitHub connected to Managed Agents | `doctl agent auth github` | agent clone/push (`GITHUB_TOKEN: oauth/github`) |
 | Managed Agents private preview | Design Partner Guide | `doctl agent` commands |
 
-Local tools: `doctl`, `gh`, `aws` CLI, `jq`, `python3`, `node` 20+, `git`.
+Local tools: `doctl` (beta build for the agent commands), `aws` CLI, `jq`, `python3`, `node` 20+, `git`.
 
 ## Quick start
 
@@ -71,7 +71,7 @@ flowchart LR
   AGENT -->|s3 sync| SPACES[(Spaces)]
   AGENT -->|indexing job| KB[Knowledge Base]
   SPACES --> KB
-  REPO -->|deploy on push| APP[App Platform chatbot]
+  REPO -->|release index, read live| APP[App Platform chatbot]
   APP -->|retrieve| KB
   APP -->|chat completion| SI[Serverless Inference]
   AGENT -.->|its own model| SI
@@ -83,7 +83,7 @@ flowchart LR
 .env.example                 every variable you might change, with comments
 scripts/lib.sh               shared helpers (env loading, templating, API polling)
 scripts/0*-*.sh              numbered setup / demo / cleanup steps
-app-platform/app.yaml        App Platform spec, GitHub source with deploy-on-push (templated)
+app-platform/app.yaml        App Platform spec, GitHub source with deploy-on-push (needs GitHub linked to DO)
 app-platform/app.public-git.yaml  same app from a public clone URL (no GitHub link needed)
 agent/spec.yaml              Managed Agents spec (templated; runbook spliced in as a skill)
 agent/prompts/curator.md     the agent's runbook
@@ -122,7 +122,7 @@ All in `.env.example`. The ones people usually change:
   dedicated GitHub account for `doctl agent auth github` in a real deployment.
 - Triggered runs are unattended: the policy must not contain `ask`. The spec uses
   `default: allow` plus explicit `deny` rules. Validate it any time with
-  `POST /v2/agents/sessions/policy/validate` (step 4 does this for you).
+  `doctl agent validate <rendered spec>` (step 4 and the render script do this for you).
 - The runbook is sent in full as the trigger / session prompt and is also attached as a
   **skill** (skills are accepted but not yet enforced in the preview). One runbook file,
   `agent/prompts/curator.md`, drives cron, webhook and attended sessions alike.

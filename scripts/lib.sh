@@ -115,7 +115,3 @@ os.chmod(out, 0o600)
 PY
   echo "$out"
 }
-
-do_api_yaml() {  # do_api_yaml METHOD PATH FILE  — POST a YAML body
-  curl -sS -X "$1" -H "Authorization: Bearer $DO_API_TOKEN" -H "Content-Type: application/x-yaml" --data-binary @"$3" "$DO_API$2"
-}

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Deploy (or update) the support chatbot on App Platform from app-platform/app.yaml.
-# Prerequisite: the DigitalOcean GitHub app is authorized for $GITHUB_OWNER
-# (App Platform -> Create App -> GitHub -> Manage Access) so deploy-on-push works.
+# APP_SOURCE=github (deploy on push) needs the DigitalOcean GitHub integration linked to your
+# account (App Platform -> Create App -> GitHub). APP_SOURCE=git clones the public URL instead.
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 load_env
 require APP_NAME APP_REGION GITHUB_OWNER APP_REPO KB_UUID MODEL_ACCESS_KEY INFERENCE_MODEL
