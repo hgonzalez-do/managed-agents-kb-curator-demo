@@ -22,6 +22,7 @@ Accounts and keys (all created in the DigitalOcean control panel):
 | Model access key | Gradient AI Platform → Serverless Inference | chatbot and the agent's model |
 | Spaces access key pair | API → Spaces Keys | docs sync |
 | GitHub app authorized for your account | App Platform → GitHub | deploy on push |
+| GitHub connected to Managed Agents | `doctl agent auth github` | agent clone/push (`GITHUB_TOKEN: oauth/github`) |
 | Managed Agents private preview | Design Partner Guide | `doctl agent` commands |
 
 Local tools: `doctl`, `gh`, `aws` CLI, `jq`, `python3`, `node` 20+, `git`.
@@ -44,9 +45,16 @@ Generated IDs are saved to `.state.env` so later scripts pick them up.
 | 1 | `scripts/01-create-spaces-bucket.sh` | Spaces bucket, uploads `docs/` |
 | 2 | `scripts/02-create-knowledge-base.sh` | Knowledge base + Spaces data source, waits for first index, smoke-tests retrieval |
 | 3 | `scripts/03-deploy-app.sh` | App Platform app from `app-platform/app.yaml` |
-| 4 | `scripts/04-start-agent.sh` | Managed Agent session from `agent/spec.yaml` with a weekly cron |
+| 4 | `scripts/04-create-trigger.sh` | validates the policy, creates the weekly cron trigger (and optional GitHub webhook trigger) from `agent/spec.yaml` |
 | 5 | `scripts/05-demo-rewind.sh [N]` | stages a live demo by removing the newest N releases from docs + KB |
-| 6 | `scripts/06-cleanup.sh` | deletes everything above |
+| 6 | `scripts/06-run-curator-now.sh` | starts an attached session from the same spec so you can watch a run |
+| 7 | `scripts/07-cleanup.sh` | deletes everything above |
+
+One-time, before step 4:
+
+```bash
+doctl agent auth github     # connects your team's GitHub account (browser flow) for GITHUB_TOKEN: oauth/github
+```
 
 ## How the pieces fit
 
@@ -71,7 +79,7 @@ flowchart LR
 scripts/lib.sh               shared helpers (env loading, templating, API polling)
 scripts/0*-*.sh              numbered setup / demo / cleanup steps
 app-platform/app.yaml        App Platform spec (templated)
-agent/spec.yaml              Managed Agents session spec (templated)
+agent/spec.yaml              Managed Agents spec (templated; runbook spliced in as a skill)
 agent/prompts/curator.md     the agent's runbook
 docs/                        architecture, demo script, other demo ideas
 ```
@@ -87,14 +95,26 @@ All in `.env.example`. The ones people usually change:
 | `KB_REGION` | `tor1` | Knowledge base region |
 | `INFERENCE_MODEL` | `anthropic-claude-haiku-4.5` | Chatbot model (any catalog model ID) |
 | `AGENT_MODEL` | `anthropic-claude-4.5-sonnet` | Model the coding agent uses |
-| `AGENT_CRON` | `0 9 * * 1` | Curator schedule (UTC) |
+| `AGENT_SIZE` | `mars-2vcpu-4gb` | Sandbox size |
+| `AGENT_CRON` / `AGENT_TIMEZONE` | `0 9 * * 1` / `UTC` | Curator schedule |
+| `OUTPUT_MODE` / `OUTPUT_EMAIL` | `email` | Where each run's report is delivered |
 
 ## Managed Agents notes (private preview)
 
-- `doctl agent …` comes from the preview build in the Design Partner Guide. Stock doctl
-  does not have it yet. `04-start-agent.sh` and `agent/spec.yaml` follow the guide's
-  structure (agent, model, github, secrets, env, policy, triggers); adjust field names if
-  your build differs.
+- `doctl agent …` ships in the doctl **beta** build (GitHub pre-release), not the standard
+  release. Your DigitalOcean contact must also enable the feature on your team; until then
+  agent commands return 404.
+- `agent/spec.yaml` uses the platform's `HARNESS_INFERENCE_*` variables so the coding agent
+  itself runs on a DigitalOcean-hosted model. To bring your own key instead, replace them with
+  `ANTHROPIC_MODEL` in `env` and `ANTHROPIC_API_KEY` in `secrets`.
+- GitHub access is `GITHUB_TOKEN: "oauth/github"` in `secrets`, minted from the team's OAuth
+  connection. The agent never sees a personal access token. Sessions are team-level, so use a
+  dedicated GitHub account for `doctl agent auth github` in a real deployment.
+- Triggered runs are unattended: the policy must not contain `ask`. The spec uses
+  `default: allow` plus explicit `deny` rules. Validate it any time with
+  `POST /v2/agents/sessions/policy/validate` (step 4 does this for you).
+- The runbook is attached as a **skill**, so the trigger prompt is one sentence and the same
+  spec works for cron, webhook and attached sessions.
 - Credentials go in `spec.secrets`, never `spec.env`. `spec.env` values are debug-readable
   in the sandbox.
 - First prompt latency is roughly 10 to 13 seconds today (sandbox creation is about 1.5 s;
@@ -105,11 +125,13 @@ All in `.env.example`. The ones people usually change:
 ## Security posture
 
 - Chatbot: read-only GenAI token + model access key, both as App Platform secrets.
-- Agent: full-access token, Spaces keys and model key via Secrets Manager. Policy allows
-  one repo, `aws s3` to one bucket, DO API and GitHub API only. Everything else is denied.
+- Agent: full-access token, Spaces keys and model key via Secrets Manager; GitHub via the
+  team OAuth connection. Blast radius is bounded by scope (one repo, one bucket prefix, one
+  KB) and by `deny` rules for destructive commands. Tighten further with a GenAI-scoped token
+  and a bucket-scoped Spaces key for a real deployment.
 - Every change lands as a git commit you can review or revert.
 
 ## Cost
 
 Agent session pauses between runs (billed for minutes worked). App Platform basic instance,
-one small Spaces bucket, one knowledge base, per-token inference. Run `06-cleanup.sh` when done.
+one small Spaces bucket, one knowledge base, per-token inference. Run `07-cleanup.sh` when done.

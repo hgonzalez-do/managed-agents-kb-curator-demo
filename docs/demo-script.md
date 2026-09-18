@@ -20,7 +20,9 @@ knowledge base. Name the products: Managed Agents, Serverless Inference, Knowled
 App Platform, Spaces.
 
 **3. Trigger the agent (30 s).** Instead of waiting for Monday's cron, run
-`doctl agent trigger <session-id>` (or the webhook). Attach to the session.
+`scripts/06-run-curator-now.sh`. It starts a fresh session from the same spec the trigger
+uses and attaches. Paste the one-line prompt it prints. (Or, if you created the webhook
+trigger, publish a release on a fork of doctl and let GitHub fire it.)
 
 **4. Watch it work (3 min).** Narrate as the terminal streams:
 - It pulls the repo and runs `releases.py fetch`: one new release found.
@@ -37,11 +39,15 @@ version, the date, both changes, and cites `v1.168.0.md`. Header now says v1.168
 App Platform redeployed on push so `/api/releases` is also current.
 
 **6. Controls (1 min).** Open `agent/spec.yaml`:
-- `secrets:` vs `env:` (Secrets Manager; nothing sensitive is debug-readable).
-- `policy:` allow / require_approval / deny. Flip `git push` to `require_approval` for
-  teams that want a human gate; the run pauses and waits.
-- `triggers:` cron plus webhook. Wire GitHub's "release published" event for near-real-time.
-- Checkpoints: fork a session to try a different summary style without losing the run.
+- `secrets:` vs `env:` (Secrets Manager; nothing sensitive is debug-readable). `GITHUB_TOKEN`
+  is `oauth/github`: no PAT anywhere.
+- `permissions:` allow by default, explicit `deny` rules. For an attended session, set
+  `default: ask` and a `git push` rule with `action: ask`; the run pauses for a human.
+- `skills:` the runbook rides along with the agent; the trigger prompt is one sentence.
+- Triggers: `doctl agent triggers list` shows the weekly cron; `list-executions` shows each
+  run with its session ID, so `doctl agent logs <session>` replays the transcript.
+- Checkpoints: `doctl agent checkpoint create` then `fork --count 3` to try three summary
+  styles in parallel without losing the run.
 
 ## Talking points if asked
 

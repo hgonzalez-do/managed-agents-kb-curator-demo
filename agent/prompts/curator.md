@@ -12,12 +12,19 @@ report it instead of improvising.
 - Target repo: `$GITHUB_OWNER/$APP_REPO` (branch `main`). Docs live under `docs/`.
 - Knowledge base: `$KB_UUID` with Spaces data source `$KB_DATA_SOURCE_UUID`, backed by
   `s3://$SPACES_BUCKET/$SPACES_PREFIX/`.
-- Credentials are already in your environment as secrets: `DIGITALOCEAN_ACCESS_TOKEN`,
-  `SPACES_ACCESS_KEY`, `SPACES_SECRET_KEY`. Never print them.
+- Credentials are already in your environment as secrets: `GITHUB_TOKEN`,
+  `DIGITALOCEAN_ACCESS_TOKEN`, `SPACES_ACCESS_KEY`, `SPACES_SECRET_KEY`. Never print them.
+- The sandbox has git, Python and Node. `scripts/sync-docs-to-spaces.sh` installs the AWS CLI
+  with pip on first use if it is missing.
 
 ## Steps
 
-1. **Get the repo.** If `./$APP_REPO` does not exist, `git clone https://github.com/$GITHUB_OWNER/$APP_REPO.git`.
+1. **Get the repo.** `GITHUB_TOKEN` in your environment is an OAuth token for GitHub. Set it up
+   once as a credential helper so clone and push work without putting the token in any URL:
+   ```
+   git config --global credential.helper '!f() { echo "username=x-access-token"; echo "password=$GITHUB_TOKEN"; }; f'
+   ```
+   If `./$APP_REPO` does not exist, `git clone https://github.com/$GITHUB_OWNER/$APP_REPO.git`.
    `cd` into it and `git pull --ff-only origin main`.
 
 2. **Find new releases.** Run `python3 scripts/releases.py fetch`. It prints JSON with the

@@ -71,3 +71,26 @@ wait_for_kb_index() {
 }
 
 banner() { printf '\n==> %s\n' "$*"; }
+
+# The message every trigger (and the live run) sends to the agent. The details live in the
+# doctl-docs-curator skill embedded in the spec.
+TRIGGER_PROMPT="Use the doctl-docs-curator skill. Check for new doctl releases, update the docs, push, sync Spaces, re-index the knowledge base, and finish with the run report."
+
+# render_agent_spec — expand ${VARS} in agent/spec.yaml and splice in the runbook as a skill.
+# Prints the path of the rendered file.
+render_agent_spec() {
+  mkdir -p "$RENDERED_DIR"
+  local out="$RENDERED_DIR/agent-spec.yaml"
+  python3 - "$ROOT/agent/spec.yaml" "$ROOT/agent/prompts/curator.md" "$out" <<'PY'
+import os, sys, textwrap
+tpl, runbook, out = sys.argv[1:4]
+spec = os.path.expandvars(open(tpl).read())
+skill = textwrap.indent(open(runbook).read().rstrip("\n"), "      ")
+open(out, "w").write(spec.replace("__CURATOR_RUNBOOK__", skill))
+PY
+  echo "$out"
+}
+
+do_api_yaml() {  # do_api_yaml METHOD PATH FILE  — POST a YAML body
+  curl -sS -X "$1" -H "Authorization: Bearer $DO_API_TOKEN" -H "Content-Type: application/x-yaml" --data-binary @"$3" "$DO_API$2"
+}
