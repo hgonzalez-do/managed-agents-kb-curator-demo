@@ -20,6 +20,10 @@ load_env() {
   [ -f "$STATE_FILE" ] && . "$STATE_FILE"
   set +a
   export DIGITALOCEAN_ACCESS_TOKEN="${DIGITALOCEAN_ACCESS_TOKEN:-$DO_API_TOKEN}"   # doctl reads this
+  # Managed Agents commands live in the doctl beta build. Point DOCTL_BETA_DIR at the folder
+  # holding that binary to prefer it over the doctl on your PATH.
+  [ -n "${DOCTL_BETA_DIR:-}" ] && export PATH="$DOCTL_BETA_DIR:$PATH"
+  return 0
 }
 
 require() {
