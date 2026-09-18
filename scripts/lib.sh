@@ -82,7 +82,7 @@ wait_for_kb_index() {
     status="$(do_api GET "/gen-ai/indexing_jobs/$job" | jq -r '.job | "\(.status // "?") \(.phase // "") docs=\(.completed_datasources // 0)/\(.total_datasources // 0) tokens=\(.tokens // 0)"')"
     echo "  $(date -u +%H:%M:%S) $status"
     case "$status" in
-      *COMPLETED*) return 0 ;;
+      *COMPLETED*|*NO_CHANGES*|*PHASE_SUCCEEDED*) return 0 ;;
       *FAILED*|*CANCEL*) echo "Indexing did not complete: $status" >&2; return 1 ;;
     esac
     if [ $(( $(date +%s) - start )) -ge "$timeout" ]; then echo "Timed out waiting for indexing." >&2; return 1; fi
