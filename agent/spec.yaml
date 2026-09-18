@@ -40,7 +40,11 @@ env:                          # plaintext, non-secret only (debug-readable in th
 
 # --- secrets ----------------------------------------------------------------
 # Slot name = guest env var. Values are write-only tenant secrets stored in Secrets Manager
-# and never echoed. GITHUB_TOKEN is a brokered OAuth slot (doctl agent auth github).
+# and never echoed.
+# GITHUB_TOKEN: by default the brokered OAuth slot (doctl agent auth github), which carries the
+# connected account's full repo access. To lock the agent to ONE repository at the credential
+# level, set GITHUB_FINE_GRAINED_PAT in .env to a fine-grained PAT scoped to that repo
+# (Contents: read/write); the renderer substitutes it here as a tenant secret.
 secrets:
   HARNESS_INFERENCE_API_KEY: "${MODEL_ACCESS_KEY}"     # Serverless Inference model access key
   GITHUB_TOKEN: "oauth/github"
@@ -78,24 +82,42 @@ __CURATOR_RUNBOOK__
 
 # --- permissions ------------------------------------------------------------
 # Triggered runs are unattended, so `ask` is not allowed (rejected at trigger creation).
-# Allow by default; strict deny on anything a curator must never do. Rules match literally.
+# Allow by default; strict deny on anything a curator must never do. Rules match literally
+# and most-specific wins, so the repo-scoped allows below beat the generic denies.
+# Validate on a live session before relying on it (ask the agent to clone another repo).
 permissions:
   default: allow
   rules:
+    # -- git is confined to this one repository and branch --
+    - tool: bash
+      match: { command: "git clone https://github.com/${GITHUB_OWNER}/${APP_REPO}*" }
+      action: allow
+    - tool: bash
+      match: { command: "git clone *" }
+      action: deny
+      enforcement: strict
+    - tool: bash
+      match: { command: "git push origin main" }
+      action: allow
+    - tool: bash
+      match: { command: "*git push*" }
+      action: deny
+      enforcement: strict
+    - tool: bash
+      match: { command: "git remote add *" }
+      action: deny
+      enforcement: strict
+    - tool: bash
+      match: { command: "git remote set-url *" }
+      action: deny
+      enforcement: strict
+    - tool: bash
+      match: { command: "gh *" }                 # no GitHub CLI: it could reach any repo
+      action: deny
+      enforcement: strict
+    # -- destructive or unsafe commands --
     - tool: bash
       match: { command: "rm -rf *" }
-      action: deny
-      enforcement: strict
-    - tool: bash
-      match: { command: "git push --force*" }
-      action: deny
-      enforcement: strict
-    - tool: bash
-      match: { command: "git push -f *" }
-      action: deny
-      enforcement: strict
-    - tool: bash
-      match: { command: "git push * --force*" }
       action: deny
       enforcement: strict
     - tool: bash

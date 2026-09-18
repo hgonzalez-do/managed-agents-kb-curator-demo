@@ -53,9 +53,13 @@ report it instead of improvising.
    `python3 -c "import json; json.load(open('docs/release-index.json'))"` must succeed.
    Confirm `docs/curator-state.json` now points at the newest tag you processed.
 
-6. **Commit and push.**
-   `git add docs && git commit -m "docs: add doctl <tags> release notes (curator)" && git push origin main`.
-   Pushing to `main` triggers an App Platform redeploy so `/api/releases` is updated.
+6. **Commit and push.** Run these as two separate commands (the policy allows exactly
+   `git push origin main`; compound commands containing a push are denied):
+   ```
+   git add docs && git commit -m "docs: add doctl <tags> release notes (curator)"
+   git push origin main
+   ```
+   The chatbot reads the release index from GitHub, so it reflects the push immediately.
 
 7. **Publish to the knowledge base.**
    - `./scripts/sync-docs-to-spaces.sh` uploads `docs/` to the bucket (deletes stale objects).
@@ -82,6 +86,7 @@ report it instead of improvising.
 
 ## Guardrails
 
+- Only work in `$GITHUB_OWNER/$APP_REPO`; never clone, add remotes for, or push to any other repo.
 - Only modify files under `docs/`. Never touch `server.js`, `public/`, or `scripts/`.
 - Never force-push, rewrite history, or push to any branch other than `main`.
 - Never echo secrets or write them into files.

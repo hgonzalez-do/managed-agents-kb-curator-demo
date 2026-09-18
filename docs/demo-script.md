@@ -42,8 +42,11 @@ App Platform redeployed on push so `/api/releases` is also current.
 **6. Controls (1 min).** Open `agent/spec.yaml`:
 - `secrets:` vs `env:` (Secrets Manager; nothing sensitive is debug-readable). `GITHUB_TOKEN`
   is `oauth/github`: no PAT anywhere.
-- `permissions:` allow by default, explicit `deny` rules. For an attended session, set
-  `default: ask` and a `git push` rule with `action: ask`; the run pauses for a human.
+- `permissions:` allow by default, explicit `deny` rules, and git confined to one repo:
+  clone only that URL, push only `git push origin main`, no new remotes, no `gh`. Prove it
+  live: ask the agent to clone `https://github.com/digitalocean/sample-python` and watch the
+  policy block it. For an attended session, set `default: ask` and a `git push` rule with
+  `action: ask`; the run pauses for a human.
 - `skills:` the runbook rides along with the agent; the trigger prompt is one sentence.
 - Triggers: `doctl agent triggers list` shows the weekly cron; `list-executions` shows each
   run with its session ID, so `doctl agent logs <session>` replays the transcript.

@@ -105,6 +105,9 @@ render_agent_spec() {
 import os, sys, textwrap
 tpl, runbook, out = sys.argv[1:4]
 spec = os.path.expandvars(open(tpl).read())
+pat = os.environ.get("GITHUB_FINE_GRAINED_PAT", "").strip()
+if pat:  # credential-level lock to one repo: replace the account-wide OAuth slot
+    spec = spec.replace('GITHUB_TOKEN: "oauth/github"', f'GITHUB_TOKEN: "{pat}"')
 skill = textwrap.indent(open(runbook).read().rstrip("\n"), "      ")
 open(out, "w").write(spec.replace("__CURATOR_RUNBOOK__", skill))
 os.chmod(out, 0o600)

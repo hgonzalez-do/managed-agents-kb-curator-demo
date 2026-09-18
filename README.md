@@ -137,10 +137,16 @@ All in `.env.example`. The ones people usually change:
 ## Security posture
 
 - Chatbot: read-only GenAI token + model access key, both as App Platform secrets.
-- Agent: full-access token, Spaces keys and model key via Secrets Manager; GitHub via the
-  team OAuth connection. Blast radius is bounded by scope (one repo, one bucket prefix, one
-  KB) and by `deny` rules for destructive commands. Tighten further with a GenAI-scoped token
-  and a bucket-scoped Spaces key for a real deployment.
+- Agent, three layers of repo confinement:
+  1. **Credential scope.** Default is the team's GitHub OAuth connection (account-wide). Set
+     `GITHUB_FINE_GRAINED_PAT` to a token that can only see `GITHUB_OWNER/APP_REPO` and the
+     agent physically cannot touch anything else.
+  2. **Policy engine.** `git clone` is allowed only for that repo URL and denied otherwise;
+     `git push` is allowed only as the exact `git push origin main`; adding or changing remotes
+     and the `gh` CLI are denied. Rules match literally, so validate on a live session.
+  3. **Runbook.** The skill tells the agent to work only in that repo and only under `docs/`.
+  Other secrets: full-access DO token, Spaces keys and model key via Secrets Manager. Tighten
+  further with a GenAI-scoped token and a bucket-scoped Spaces key for a real deployment.
 - Every change lands as a git commit you can review or revert.
 
 ## Cost
