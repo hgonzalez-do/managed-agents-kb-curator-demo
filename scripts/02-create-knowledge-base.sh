@@ -39,7 +39,10 @@ banner "Data source"
 KB_DATA_SOURCE_UUID="$(do_api GET "/gen-ai/knowledge_bases/$KB_UUID/data_sources" | jq -r '.knowledge_base_data_sources[0].uuid')"
 save_state KB_DATA_SOURCE_UUID "$KB_DATA_SOURCE_UUID"
 
-wait_for_kb_index "$KB_UUID"
+banner "Initial indexing job"
+JOB="$(start_kb_index "$KB_UUID" "$KB_DATA_SOURCE_UUID")"
+[ -n "$JOB" ] || { echo "Could not start an indexing job" >&2; exit 1; }
+wait_for_kb_index "$JOB"
 
 banner "Smoke-test retrieval"
 curl -sS -X POST "https://kbaas.do-ai.run/v1/$KB_UUID/retrieve" \

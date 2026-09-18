@@ -57,13 +57,19 @@ do_api() {  # do_api METHOD PATH [JSON_BODY]
   fi
 }
 
-# wait_for_kb_index KB_UUID [TIMEOUT_SECONDS] — poll the KB's last indexing job.
+# start_kb_index KB_UUID DATA_SOURCE_UUID — start an indexing job; prints the job UUID.
+# (Creating a KB does not index it; an explicit job is required.)
+start_kb_index() {
+  do_api POST /gen-ai/indexing_jobs "{\"knowledge_base_uuid\":\"$1\",\"data_source_uuids\":[\"$2\"]}" | jq -r '.job.uuid // empty'
+}
+
+# wait_for_kb_index JOB_UUID [TIMEOUT_SECONDS] — poll an indexing job until it finishes.
 wait_for_kb_index() {
-  local kb="$1" timeout="${2:-900}" start status
+  local job="$1" timeout="${2:-900}" start status
   start=$(date +%s)
-  echo "Waiting for knowledge base $kb to finish indexing..."
+  echo "Waiting for indexing job $job ..."
   while :; do
-    status="$(do_api GET "/gen-ai/knowledge_bases/$kb" | jq -r '.knowledge_base.last_indexing_job | "\(.status // "PENDING") \(.phase // "")"')"
+    status="$(do_api GET "/gen-ai/indexing_jobs/$job" | jq -r '.job | "\(.status // "?") \(.phase // "") docs=\(.completed_datasources // 0)/\(.total_datasources // 0) tokens=\(.tokens // 0)"')"
     echo "  $(date -u +%H:%M:%S) $status"
     case "$status" in
       *COMPLETED*) return 0 ;;
