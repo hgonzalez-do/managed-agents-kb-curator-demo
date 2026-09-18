@@ -51,8 +51,9 @@ Generated IDs are saved to `.state.env` so later scripts pick them up.
 | 7 | `scripts/07-cleanup.sh` | deletes everything above |
 
 Prefer to run the Managed Agents commands by hand? `scripts/render-agent-spec.sh` writes the
-fully rendered spec to `.rendered/agent-spec.yaml`; pass that file to `doctl agent validate`,
-`doctl agent start` or `doctl agent triggers create` directly.
+fully rendered spec to `.rendered/agent-spec.yaml` and prints ready-to-paste `doctl agent`
+commands (validate, dry-run, live run, cron trigger) with absolute paths, so they work from
+any directory.
 
 One-time, before step 4:
 
